@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="P_FreeRoom" Id="{5eda436e-cb6c-4de1-afe4-993569d2f086}" SpecialFunc="None">
+    <Declaration><![CDATA[// Beckhoff Polska
+// przykladowy program do obslugi TF6730 IoT_Communicator
+// Wymaga dodania bibliotek Tc3_IoTCommunicator oraz Tc2_Utilities
+// v1.0
+// 22/08/2019
+PROGRAM P_FreeRoom
+VAR
+	fbIoT			: FB_IotCommunicator := (
+						sHostName	:= '127.0.0.1',
+						nPort		:= 1883,
+						sMainTopic	:= 'MyMainTopic',
+						sDeviceName	:= 'Room One');
+	stData			: ST_DataRoom1;
+	timer			: TON;
+	fbRand			: DRAND;
+	fbGetTime		: NT_GetTime;
+	bSendMessage	: BOOL;
+	sMessage		: STRING(255) := 'my plc message';
+	wSeed			: WORD;
+	nDummy: REAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+// keep alive
+fbIoT.Execute(TRUE);
+
+timer(IN := NOT timer.Q, PT := T#500MS);
+
+
+// synchronize data
+IF fbIoT.bConnected AND timer.Q THEN
+    fbIoT.SendData(ADR(stData), SIZEOF(stData));
+END_IF
+
+
+// pending changes from Android App
+IF fbIoT.fbCommand.bAvailable THEN
+    IF fbIoT.fbCommand.sVarName = 'nSetValue' THEN
+		fbIoT.fbCommand.GetValue(ADR(stData.nSetValue), SIZEOF(stData.nSetValue), E_IotCommunicatorDatatype.type_REAL);
+		IF (stData.nSetValue > 70 ) THEN
+			stData.nSetValue := 70;
+			fbIoT.SendMessage('Set temperature too high!!! Max temp is 70.');
+		ELSIF (stData.nSetValue < -20 ) THEN	
+			stData.nSetValue := -20;
+			fbIoT.SendMessage('Set temperature too low!!! Min temp is -20.');
+		END_IF
+    END_IF
+    fbIoT.fbCommand.Remove();
+END_IF
+
+
+// rand temp
+fbGetTime(START := timer.Q);
+wSeed := fbGetTime.TIMESTR.wMinute + fbGetTime.TIMESTR.wSecond + fbGetTime.TIMESTR.wMilliseconds;
+
+IF timer.Q THEN
+	// temp1
+	fbRand(Seed := WORD_TO_INT(wSeed));
+	stData.nTemp1 := stData.nTemp1 + (fbRand.Num - 0.5);
+	stData.nTemp1 := INT_TO_REAL(REAL_TO_INT(stData.nTemp1 * 100))/100; // cut off last digits
+	IF (stData.nTemp1 < 5) THEN
+		stData.nTemp1 := 5;
+	ELSIF (stData.nTemp1 > 30) THEN
+		stData.nTemp1 := 30;
+	END_IF
+	// temp2
+	fbRand(Seed := WORD_TO_INT(wSeed + 1));
+	stData.nTemp2 := stData.nTemp2 + (fbRand.Num - 0.5);
+	stData.nTemp2 := INT_TO_REAL(REAL_TO_INT(stData.nTemp2 * 100))/100; // cut off last digits
+	IF (stData.nTemp2 < 5) THEN
+		stData.nTemp2 := 5;
+	ELSIF (stData.nTemp2 > 30) THEN
+		stData.nTemp2 := 30;
+	END_IF
+	// temp 3
+	fbRand(Seed := WORD_TO_INT(wSeed + 2));
+	stData.nTemp3 := stData.nTemp3 + (fbRand.Num - 0.5);
+	stData.nTemp3 := INT_TO_REAL(REAL_TO_INT(stData.nTemp3 * 100))/100; // cut off last digits
+	IF (stData.nTemp3 < 5) THEN
+		stData.nTemp3 := 5;
+	ELSIF (stData.nTemp3 > 30) THEN
+		stData.nTemp3 := 30;
+	END_IF
+END_IF
+
+
+// send plc message
+IF bSendMessage THEN
+	bSendMessage := FALSE;
+	fbIoT.SendMessage(sMessage);
+END_IF
+
+
+nDummy := stData.nSetValue - REAL_TO_INT(stData.nSetValue);
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

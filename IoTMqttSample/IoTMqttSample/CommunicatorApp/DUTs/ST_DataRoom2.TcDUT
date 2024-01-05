@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.0">
+  <DUT Name="ST_DataRoom2" Id="{5e43fd75-b835-4c0a-bf70-4ca01415974a}">
+    <Declaration><![CDATA[TYPE ST_DataRoom2 :
+STRUCT
+	
+	{attribute 'iot.DisplayName' := 'Start/Stop Blinker'}
+    bBlinker1 : BOOL;
+    {attribute 'iot.DisplayName' := 'Im blinking'}
+	{attribute 'iot.ReadOnly' := 'true'}
+    bBlinker2 : BOOL;
+	
+	{attribute 'iot.DisplayName' := 'Start/Stop Counting'}
+    bCount : BOOL;
+    {attribute 'iot.DisplayName' := 'Counting'}
+	{attribute 'iot.ReadOnly' := 'true'}
+    bCount2 : BOOL;
+	
+    {attribute 'iot.DisplayName' := 'Going Up'}
+	{attribute 'iot.ReadOnly' := 'true'}
+	{attribute 'iot.Unit' := 'integer'}	
+	uiSomeValue : UINT;
+	
+    {attribute 'iot.DisplayName' := 'Going Up 2'}
+	{attribute 'iot.ReadOnly' := 'true'}
+	{attribute 'iot.Unit' := 'real'}	
+	rSomeValue : REAL;
+	
+	{attribute 'iot.DisplayName' := 'Reset'}
+    bReset : BOOL;
+	
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

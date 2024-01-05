@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.0">
+  <DUT Name="ST_DataRoom1" Id="{7c0ae3ab-dc7e-498c-91d0-df8ba6c3e539}">
+    <Declaration><![CDATA[TYPE ST_DataRoom1 :
+STRUCT
+    {attribute 'iot.DisplayName' := 'Temperature 1'}
+    {attribute 'iot.ReadOnly' := 'true'}
+    {attribute 'iot.Unit' := 'Celsius'}
+    {attribute 'iot.MinValue' := '5'}
+    {attribute 'iot.MaxValue' := '30'}
+    nTemp1  : REAL;
+    {attribute 'iot.DisplayName' := 'Temperature 2'}
+    {attribute 'iot.ReadOnly' := 'true'}
+    {attribute 'iot.Unit' := 'Celsius'}
+    {attribute 'iot.MinValue' := '5'}
+    {attribute 'iot.MaxValue' := '30'}
+    nTemp2  : REAL;
+    {attribute 'iot.DisplayName' := 'Temperature 3'}
+    {attribute 'iot.ReadOnly' := 'true'}
+    {attribute 'iot.Unit' := 'Celsius'}
+    {attribute 'iot.MinValue' := '5'}
+    {attribute 'iot.MaxValue' := '30'}
+    nTemp3  : REAL;
+	{attribute 'iot.DisplayName' := 'Some value with range'}
+    //{attribute 'iot.ReadOnly' := 'true'}
+    {attribute 'iot.Unit' := 'some unit'}
+    {attribute 'iot.MinValue' := '-20'}
+    {attribute 'iot.MaxValue' := '70'}
+    nSetValue  : REAL;
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

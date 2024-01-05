@@ -1,0 +1,112 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="P_FreeRoom2" Id="{2b8706db-4872-4ba9-afc5-46a2bcdc5eed}" SpecialFunc="None">
+    <Declaration><![CDATA[// Beckhoff Polska
+// przykladowy program do obslugi TF6730 IoT_Communicator
+// Wymaga dodania bibliotek Tc3_IoTCommunicator oraz Tc2_Utilities
+// v1.0
+// 22/08/2019
+PROGRAM P_FreeRoom2
+VAR
+	fbIoT 			: FB_IotCommunicator := (
+						sHostName := '127.0.0.1',
+						nPort := 1883,
+						sMainTopic := 'MyMainTopic',
+						sDeviceName := 'Room 2');
+	stData			: ST_DataRoom2;
+	timer			: TON;
+	timer2			: TON;
+	timer3			: TON;
+	rTrig			: R_TRIG;
+	fTrig			: F_TRIG;
+	rTrigReset		: R_TRIG;
+	fbRand			: DRAND;
+	bSendMessage	: BOOL;
+	sMessage		: STRING(255) := 'my plc message 2';
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+// keep alive
+fbIoT.Execute(TRUE);
+
+timer(	IN := NOT timer.Q, 	PT := T#500MS);
+timer2(	IN := NOT timer2.Q, PT := T#2S);
+
+
+// synchronize data
+IF fbIoT.bConnected AND timer.Q THEN
+    fbIoT.SendData(ADR(stData), SIZEOF(stData));
+END_IF
+
+
+// pending changes from Android App
+IF fbIoT.fbCommand.bAvailable THEN
+	IF fbIoT.fbCommand.sVarName = 'bBlinker1' THEN
+		fbIoT.fbCommand.GetValue(	ADR(stData.bBlinker1),
+									SIZEOF(stData.bBlinker1),
+									E_IotCommunicatorDatatype.type_BOOL);
+	ELSIF fbIoT.fbCommand.sVarName = 'bCount' THEN
+		fbIoT.fbCommand.GetValue(	ADR(stData.bCount),
+									SIZEOF(stData.bCount),
+									E_IotCommunicatorDatatype.type_BOOL);
+	ELSIF fbIoT.fbCommand.sVarName = 'bReset' THEN
+		fbIoT.fbCommand.GetValue(	ADR(stData.bReset),
+									SIZEOF(stData.bReset),
+									E_IotCommunicatorDatatype.type_BOOL);
+					
+	END_IF
+	fbIoT.fbCommand.Remove();
+END_IF
+
+
+// reset counter
+IF stData.bReset THEN	
+	stData.bReset := FALSE;
+	stData.bCount := FALSE;
+	stData.bCount2 := FALSE;
+	stData.rSomeValue := 0;
+	stData.uiSomeValue := 0;
+	fbIoT.SendMessage('Reset Counter');
+END_IF
+
+
+// blink some bool
+IF stData.bBlinker1 AND timer2.Q THEN
+	stData.bBlinker2 := NOT stData.bBlinker2;
+ELSIF NOT stData.bBlinker1 AND timer2.Q THEN
+	stData.bBlinker2 := FALSE;
+END_IF
+
+
+//cont int and real
+rTrig(CLK := stData.bCount);
+IF rTrig.Q THEN
+	stData.bCount2 := TRUE;
+	fbIoT.SendMessage('Counting Started');	
+END_IF
+fTrig(CLK := stData.bCount);
+IF fTrig.Q THEN
+	stData.bCount2 := FALSE;
+	fbIoT.SendMessage('Counting Stopped');
+END_IF
+IF stData.bCount2 THEN
+	fbRand(Seed := UINT_TO_INT(stData.uiSomeValue));
+	stData.rSomeValue := stData.rSomeValue + LREAL_TO_REAL(fbRand.Num);
+	stData.uiSomeValue := stData.uiSomeValue + 1;
+END_IF
+
+
+// send plc message
+IF bSendMessage THEN
+	bSendMessage := FALSE;
+	fbIoT.SendMessage(sMessage);
+END_IF
+
+
+
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
